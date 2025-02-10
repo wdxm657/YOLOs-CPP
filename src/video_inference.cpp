@@ -120,21 +120,20 @@ int main()
     int fourcc = static_cast<int>(cap.get(cv::CAP_PROP_FOURCC)); // Get codec of input video
 
     // Create a VideoWriter object to save the output video with the same codec
-    cv::VideoWriter out(outputPath, fourcc, fps, cv::Size(frameWidth, frameHeight), true);
-    if (!out.isOpened())
-    {
-        std::cerr << "Error: Could not open the output video file for writing!\n";
-        return -1;
-    }
+    // cv::VideoWriter out(outputPath, fourcc, fps, cv::Size(frameWidth, frameHeight), true);
+    // if (!out.isOpened())
+    // {
+    //     std::cerr << "Error: Could not open the output video file for writing!\n";
+    //     return -1;
+    // }
 
     // Thread-safe queues and processing...
     // Thread-safe queues
     SafeQueue<cv::Mat> frameQueue;
     SafeQueue<std::pair<int, cv::Mat>> processedQueue;
 
-    // Flag to indicate processing completion
-    std::atomic<bool> processingDone(false);
-
+    // Flag to indicate if the application should exit
+    std::atomic<bool> exitFlag(false); // 新增退出标志
 
     // Capture thread
     std::thread captureThread([&]() {
@@ -142,6 +141,7 @@ int main()
         int frameCount = 0;
         while (cap.read(frame))
         {
+            if (exitFlag) break;
             frameQueue.enqueue(frame.clone()); // Clone to ensure thread safety
             frameCount++;
         }
@@ -154,6 +154,7 @@ int main()
         int frameIndex = 0;
         while (frameQueue.dequeue(frame))
         {
+            if (exitFlag) break;
             // Detect objects in the frame
             std::vector<Detection> results = detector.detect(frame);
 
@@ -173,8 +174,13 @@ int main()
         {
             // Display the annotated image
             cv::imshow("YOLO11 Detections", processedFrame.second.clone());
-            cv::waitKey(0); // Wait indefinitely until a key is pressed
-            out.write(processedFrame.second);
+            // 检查是否按下 'q' 键
+            if (cv::waitKey(1) == 'q') {
+                printf("quite!!!\r\n");
+                exitFlag = true; // 设置退出标志
+                break; // 退出循环
+            }
+            // out.write(processedFrame.second);
         }
     });
 
@@ -185,7 +191,7 @@ int main()
 
     // Release resources
     cap.release();
-    out.release();
+    // out.release();
     cv::destroyAllWindows();
 
     std::cout << "Video processing completed successfully." << std::endl;
