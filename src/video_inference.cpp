@@ -51,7 +51,7 @@
 // #include "YOLO7.hpp"  // Uncomment for YOLOv7
 // #include "YOLO8.hpp"  // Uncomment for YOLOv8
 // #include "YOLO10.hpp" // Uncomment for YOLOv10
-#include "YOLO11.hpp" // Uncomment for YOLOv10
+#include "YOLO11.hpp" // Uncomment for YOLOv11
 
 // Thread-safe queue implementation
 template <typename T>
@@ -171,6 +171,9 @@ int main()
         std::pair<int, cv::Mat> processedFrame;
         while (processedQueue.dequeue(processedFrame))
         {
+            // Display the annotated image
+            cv::imshow("YOLO11 Detections", processedFrame.second.clone());
+            cv::waitKey(0); // Wait indefinitely until a key is pressed
             out.write(processedFrame.second);
         }
     });
